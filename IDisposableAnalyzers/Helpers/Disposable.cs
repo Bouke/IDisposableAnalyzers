@@ -42,16 +42,17 @@ internal static partial class Disposable
         return true;
     }
 
-    internal static bool IsAssignableFrom(ITypeSymbol type, Compilation compilation) => type switch
-    {
-        null => false,
-        //// https://blogs.msdn.microsoft.com/pfxteam/2012/03/25/do-i-need-to-dispose-of-tasks/
-        { ContainingNamespace: { MetadataName: "Tasks", ContainingNamespace: { MetadataName: "Threading", ContainingNamespace.MetadataName: "System" } }, MetadataName: "Task" } => false,
-        INamedTypeSymbol { ContainingNamespace: { MetadataName: "Tasks", ContainingNamespace: { MetadataName: "Threading", ContainingNamespace.MetadataName: "System" } }, MetadataName: "Task`1", TypeArguments: { Length: 1 } arguments }
-            => IsAssignableFrom(arguments[0], compilation),
-        { IsRefLikeType: true } => DisposeMethod.IsAccessibleOn(type, compilation),
-        _ => type.IsAssignableTo(KnownSymbols.IDisposable, compilation),
-    };
+    internal static bool IsAssignableFrom(ITypeSymbol type, Compilation compilation) =>
+        type switch
+        {
+            null => false,
+            //// https://blogs.msdn.microsoft.com/pfxteam/2012/03/25/do-i-need-to-dispose-of-tasks/
+            { ContainingNamespace: { MetadataName: "Tasks", ContainingNamespace: { MetadataName: "Threading", ContainingNamespace.MetadataName: "System" } }, MetadataName: "Task" } => false,
+            INamedTypeSymbol { ContainingNamespace: { MetadataName: "Tasks", ContainingNamespace: { MetadataName: "Threading", ContainingNamespace.MetadataName: "System" } }, MetadataName: "Task`1", TypeArguments: { Length: 1 } arguments }
+                => IsAssignableFrom(arguments[0], compilation),
+            { IsRefLikeType: true } => DisposeMethod.IsAccessibleOn(type, compilation),
+            _ => type.IsAssignableTo(KnownSymbols.IDisposable, compilation) || type.IsAssignableTo(KnownSymbols.IAsyncDisposable, compilation),
+        };
 
     internal static bool IsNop(ExpressionSyntax candidate, SemanticModel semanticModel, CancellationToken cancellationToken)
     {

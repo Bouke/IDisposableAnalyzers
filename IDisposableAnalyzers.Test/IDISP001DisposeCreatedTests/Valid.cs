@@ -36,6 +36,22 @@ namespace N
     }
 }";
 
+    private const string AsyncDisposable = """
+            namespace N
+            {
+                using System;
+                using System.Threading.Tasks;
+
+                public class AsyncDisposable : IAsyncDisposable
+                {
+                    public ValueTask DisposeAsync()
+                    {
+                        return ValueTask.CompletedTask;
+                    }
+                }
+            }
+            """;
+
     [TestCase("1")]
     [TestCase("new string(' ', 1)")]
     [TestCase("typeof(IDisposable)")]
@@ -84,6 +100,27 @@ namespace N
 }";
 
         RoslynAssert.Valid(Analyzer, Disposable, code);
+    }
+
+    [Test]
+    public static void WhenDisposingVariableAsync()
+    {
+        var code = @"
+namespace N
+{
+    using System.Threading.Tasks;
+
+    public class C
+    {
+        public async Task M()
+        {
+            var item = new AsyncDisposable();
+            await item.DisposeAsync();
+        }
+    }
+}";
+
+        RoslynAssert.Valid(Analyzer, AsyncDisposable, code);
     }
 
     [Test]

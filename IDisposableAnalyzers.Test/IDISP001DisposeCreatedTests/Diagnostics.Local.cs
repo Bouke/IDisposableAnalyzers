@@ -24,6 +24,22 @@ public static partial class Diagnostics
             }
             """;
 
+        private const string AsyncDisposable = """
+            namespace N
+            {
+                using System;
+                using System.Threading.Tasks;
+
+                public class AsyncDisposable : IAsyncDisposable
+                {
+                    public ValueTask DisposeAsync()
+                    {
+                        return ValueTask.CompletedTask;
+                    }
+                }
+            }
+            """;
+
         [TestCase("new Disposable()")]
         [TestCase("new Disposable() as object")]
         [TestCase("(object) new Disposable()")]
@@ -162,6 +178,25 @@ public static partial class Diagnostics
                 }
                 """;
             RoslynAssert.Diagnostics(Analyzer, ExpectedDiagnostic, Disposable, code);
+        }
+
+        [Test]
+        public static void NewAsyncDisposable()
+        {
+            var code = """
+                       namespace N
+                       {
+                           public static class C
+                           {
+                               public static long M()
+                               {
+                                   ↓var disposable = new AsyncDisposable();
+                                   return 1;
+                               }
+                           }
+                       }
+                       """;
+            RoslynAssert.Diagnostics(Analyzer, ExpectedDiagnostic, AsyncDisposable, code);
         }
 
         [Test]
